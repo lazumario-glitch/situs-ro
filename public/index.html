@@ -391,7 +391,7 @@ function setMarker(lat, lng) {
 map.on('click', (e) => {
   setMarker(e.latlng.lat, e.latlng.lng);
   switchTab('coords');
-  runLookup();
+  runLookup({ pan: false });
 });
 
 document.querySelectorAll('.tab').forEach(tab => {
@@ -415,7 +415,8 @@ function showStatus(msg, type) {
 }
 function hideStatus() { document.getElementById('status').classList.add('hidden'); }
 
-async function runLookup() {
+async function runLookup(opts = {}) {
+  const pan = opts.pan !== false;
   hideStatus();
   const activeTab = document.querySelector('.tab.active').dataset.tab;
   let url = '/v1/lookup?';
@@ -430,7 +431,7 @@ async function runLookup() {
     if (isNaN(lat) || isNaN(lng)) return showStatus('Introdu coordonate valide.', 'error');
     url += 'lat=' + lat + '&lng=' + lng;
     setMarker(lat, lng);
-    map.setView([lat, lng], Math.max(map.getZoom(), 10));
+    if (pan) map.setView([lat, lng], Math.max(map.getZoom(), 10));
   }
 
   showStatus('Se caută încadrarea...', 'loading');
