@@ -242,18 +242,21 @@ async def lookup(
 
 
 @app.get("/v1/zones/{measurement}", summary="GeoJSON pentru o zonare", include_in_schema=True)
-async def get_zone_geojson(measurement: str):
-    """Returneaza GeoJSON-ul zonarii pentru overlay vizual pe harta."""
-    mapping = {
-        "ag": ZONE_AG,
-        "tc": ZONE_TC,
-        "inghet": ZONE_INGHET,
-        "vant": ZONE_VANT,
-        "zapada": ZONE_ZAPADA,
-    }
-    if measurement not in mapping:
-        raise HTTPException(404, f"Zonare necunoscuta: {measurement}. Disponibile: {list(mapping.keys())}.")
-    return mapping[measurement]
+async def get_zone_geojson(measurement: str, smooth: int = Query(2, ge=0, le=3,
+                                                                  description="Nivel smoothing 0-3")):
+    """Returneaza GeoJSON-ul zonarii pentru overlay vizual pe harta.
+
+    `smooth` controleaza Chaikin corner-cutting: 0 = polygon brut (colturi vizibile),
+    3 = curbe foarte netede. Implicit 2.
+    """
+    if measurement not in {"ag", "tc", "inghet", "vant", "zapada"}:
+        raise HTTPException(404, f"Zonare necunoscuta: {measurement}.")
+    fname = f"zone_{measurement}_s{smooth}.geojson"
+    path = os.path.join(DATA_DIR, fname)
+    if not os.path.exists(path):
+        raise HTTPException(404, f"Nivel smooth indisponibil: {smooth}.")
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
 
 
 if os.path.isdir(PUBLIC_DIR):

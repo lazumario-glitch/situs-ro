@@ -100,6 +100,29 @@
   .layer-btn.active { background: var(--accent); color: #052e16; }
   .layer-btn.off { color: var(--text-dim); }
 
+  /* Smooth selector */
+  .smooth-selector {
+    position: absolute; top: 64px; right: 16px;
+    background: rgba(26, 31, 41, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+    z-index: 1000;
+    display: flex; flex-direction: column; gap: 6px;
+    font-size: 11px;
+  }
+  .smooth-selector-label {
+    color: var(--text-dim); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; font-size: 10px;
+  }
+  .smooth-buttons { display: flex; gap: 2px; }
+  .smooth-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 8px; border-radius: 3px; cursor: pointer;
+    font-family: inherit; font-size: 10px; font-weight: 500; min-width: 28px;
+  }
+  .smooth-btn:hover { color: var(--text); }
+  .smooth-btn.active { background: var(--accent); color: #052e16; border-color: var(--accent); }
+
   @media (max-width: 768px) {
     .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     .sidebar { max-height: 50vh; }
@@ -192,6 +215,15 @@
       <button class="layer-btn" data-layer="zapada">zăpadă</button>
       <button class="layer-btn off" data-layer="off">off</button>
     </div>
+    <div class="smooth-selector">
+      <div class="smooth-selector-label">Netezire</div>
+      <div class="smooth-buttons">
+        <button class="smooth-btn" data-smooth="0" title="Polygon brut (colțuri vizibile)">0</button>
+        <button class="smooth-btn" data-smooth="1" title="Ușor">1</button>
+        <button class="smooth-btn active" data-smooth="2" title="Mediu (implicit)">2</button>
+        <button class="smooth-btn" data-smooth="3" title="Puternic">3</button>
+      </div>
+    </div>
     <div class="legend" id="legend"></div>
   </div>
 </div>
@@ -273,25 +305,30 @@ function colorFor(layerKey, value) {
 
 let currentLayer = null;
 let currentLayerKey = 'ag';
+let currentSmooth = 2;
 const layerCache = {};
 
-async function loadZoneLayer(key) {
-  if (layerCache[key]) return layerCache[key];
-  const resp = await fetch('/v1/zones/' + key);
+async function loadZoneLayer(key, smooth) {
+  const cacheKey = key + ':' + smooth;
+  if (layerCache[cacheKey]) return layerCache[cacheKey];
+  const resp = await fetch('/v1/zones/' + key + '?smooth=' + smooth);
   if (!resp.ok) return null;
-  layerCache[key] = await resp.json();
-  return layerCache[key];
+  layerCache[cacheKey] = await resp.json();
+  return layerCache[cacheKey];
 }
 
 async function setLayer(key) {
   if (currentLayer) { map.removeLayer(currentLayer); currentLayer = null; }
   document.querySelectorAll('.layer-btn').forEach(b => b.classList.toggle('active', b.dataset.layer === key));
+  const smoothSel = document.querySelector('.smooth-selector');
   if (key === 'off') {
     document.getElementById('legend').style.display = 'none';
+    if (smoothSel) smoothSel.style.display = 'none';
     return;
   }
   document.getElementById('legend').style.display = 'block';
-  const data = await loadZoneLayer(key);
+  if (smoothSel) smoothSel.style.display = 'flex';
+  const data = await loadZoneLayer(key, currentSmooth);
   if (!data) return;
   const ramp = COLOR_RAMPS[key];
   currentLayer = L.geoJSON(data, {
@@ -315,6 +352,19 @@ async function setLayer(key) {
   renderLegend(key);
   currentLayerKey = key;
 }
+
+function setSmooth(level) {
+  currentSmooth = level;
+  document.querySelectorAll('.smooth-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.smooth) === level));
+  if (currentLayerKey !== 'off') {
+    setLayer(currentLayerKey);
+  }
+}
+
+document.querySelectorAll('.smooth-btn').forEach(btn => {
+  btn.addEventListener('click', () => setSmooth(parseInt(btn.dataset.smooth)));
+});
 
 function renderLegend(key) {
   const ramp = COLOR_RAMPS[key];
