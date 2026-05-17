@@ -1,0 +1,317 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 100,
+    "max_cm": 110,
+    "label": "100–110 cm (Carpați)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       24.5,
+       45.3
+      ],
+      [
+       25.3,
+       45.5
+      ],
+      [
+       25.6,
+       46.0
+      ],
+      [
+       25.3,
+       46.3
+      ],
+      [
+       24.8,
+       46.3
+      ],
+      [
+       24.5,
+       46.0
+      ],
+      [
+       24.3,
+       45.6
+      ],
+      [
+       24.5,
+       45.3
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 100,
+    "max_cm": 110,
+    "label": "100–110 cm (Moldova N)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       26.0,
+       47.0
+      ],
+      [
+       28.3,
+       47.0
+      ],
+      [
+       28.3,
+       48.3
+      ],
+      [
+       26.0,
+       48.3
+      ],
+      [
+       26.0,
+       47.0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 100,
+    "max_cm": 110,
+    "label": "100–110 cm (Maramureș)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       22.5,
+       47.5
+      ],
+      [
+       25.5,
+       47.5
+      ],
+      [
+       25.5,
+       48.1
+      ],
+      [
+       22.5,
+       48.1
+      ],
+      [
+       22.5,
+       47.5
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 70,
+    "max_cm": 80,
+    "label": "70–80 cm (Dobrogea S)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       27.0,
+       43.6
+      ],
+      [
+       29.8,
+       43.6
+      ],
+      [
+       29.8,
+       44.4
+      ],
+      [
+       27.0,
+       44.4
+      ],
+      [
+       27.0,
+       43.6
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 70,
+    "max_cm": 80,
+    "label": "70–80 cm (sud Olt/Muntenia)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       22.5,
+       43.65
+      ],
+      [
+       25.0,
+       43.65
+      ],
+      [
+       25.0,
+       44.5
+      ],
+      [
+       22.5,
+       44.5
+      ],
+      [
+       22.5,
+       43.65
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 80,
+    "max_cm": 90,
+    "label": "80–90 cm (Banat V)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       20.3,
+       45.2
+      ],
+      [
+       22.3,
+       45.2
+      ],
+      [
+       22.3,
+       46.0
+      ],
+      [
+       20.3,
+       46.0
+      ],
+      [
+       20.3,
+       45.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 80,
+    "max_cm": 90,
+    "label": "80–90 cm (sud/est)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       20.2,
+       43.6
+      ],
+      [
+       29.95,
+       43.6
+      ],
+      [
+       29.95,
+       45.4
+      ],
+      [
+       28.0,
+       45.6
+      ],
+      [
+       26.5,
+       45.3
+      ],
+      [
+       25.0,
+       45.0
+      ],
+      [
+       22.5,
+       44.8
+      ],
+      [
+       20.5,
+       44.3
+      ],
+      [
+       20.2,
+       43.6
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "min_cm": 90,
+    "max_cm": 100,
+    "label": "90–100 cm (centru/N)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       20.2,
+       43.6
+      ],
+      [
+       30.1,
+       43.6
+      ],
+      [
+       30.1,
+       48.3
+      ],
+      [
+       20.2,
+       48.3
+      ],
+      [
+       20.2,
+       43.6
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "metadata": {
+  "normativ": "STAS 6045-77",
+  "unit": "cm"
+ }
+}

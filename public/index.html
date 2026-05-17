@@ -29,129 +29,82 @@
     line-height: 1.5;
     overflow: hidden;
   }
-  .app {
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    height: 100vh;
-  }
-  .sidebar {
-    background: var(--panel);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  .brand-logo {
-    width: 32px; height: 32px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-    display: grid;
-    place-items: center;
-    font-weight: 700;
-    color: #052e16;
-  }
+  .app { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
+  .sidebar { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+  .brand { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .brand-logo { width: 32px; height: 32px; border-radius: 6px; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%); display: grid; place-items: center; font-weight: 700; color: #052e16; }
   .brand-name { font-size: 16px; font-weight: 600; }
   .brand-sub { font-size: 11px; color: var(--text-dim); }
-
   .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-  .input, .textarea {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 9px 12px;
-    border-radius: 6px;
-    font: inherit;
-    width: 100%;
-    transition: border-color 0.15s;
-  }
-  .input:focus, .textarea:focus { outline: none; border-color: var(--accent); }
+  .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .input { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font: inherit; width: 100%; transition: border-color 0.15s; }
+  .input:focus { outline: none; border-color: var(--accent); }
   .input::placeholder { color: var(--text-dim); }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
   .tabs { display: flex; background: var(--panel-2); border-radius: 6px; padding: 3px; }
   .tab { flex: 1; padding: 6px 10px; text-align: center; border-radius: 4px; cursor: pointer; font-size: 12px; color: var(--text-dim); transition: all 0.15s; }
   .tab.active { background: var(--bg); color: var(--text); }
-
-  .btn {
-    background: var(--accent);
-    color: #052e16;
-    border: none;
-    padding: 10px 14px;
-    border-radius: 6px;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
+  .btn { background: var(--accent); color: #052e16; border: none; padding: 10px 14px; border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
   .btn:hover:not(:disabled) { opacity: 0.9; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .result {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .result-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
+  .result { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .result-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
   .result-title { font-weight: 600; }
   .result-judet { color: var(--accent); font-size: 12px; }
-  .metric { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; }
+  .metric { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; }
   .metric-label { font-size: 12px; color: var(--text-dim); }
   .metric-value { font-weight: 600; font-variant-numeric: tabular-nums; }
   .metric-source { font-size: 10px; color: var(--text-dim); }
-
   .status { font-size: 12px; padding: 8px 10px; border-radius: 4px; }
   .status.error { background: rgba(248, 113, 113, 0.12); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.3); }
   .status.loading { background: rgba(251, 191, 36, 0.12); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.3); }
   .status.empty { color: var(--text-dim); text-align: center; padding: 24px 12px; font-style: italic; }
-
   .hidden { display: none !important; }
-
   .map { position: relative; }
   #map { width: 100%; height: 100%; background: var(--panel); }
-
-  .footer {
-    margin-top: auto;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 1.5;
-  }
+  .footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); line-height: 1.5; }
   .footer a { color: var(--text-dim); text-decoration: underline; }
-
-  .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background: var(--panel-2);
-    color: var(--text);
-  }
-  .leaflet-control-attribution {
-    background: rgba(15, 20, 25, 0.85) !important;
-    color: var(--text-dim) !important;
-  }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel-2); color: var(--text); }
+  .leaflet-control-attribution { background: rgba(15, 20, 25, 0.85) !important; color: var(--text-dim) !important; }
   .leaflet-control-attribution a { color: var(--text-dim) !important; }
+
+  /* Legend */
+  .legend {
+    position: absolute; bottom: 16px; right: 16px;
+    background: rgba(26, 31, 41, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    font-size: 11px; line-height: 1.5;
+    color: var(--text); z-index: 1000;
+    max-width: 200px;
+  }
+  .legend-title { font-weight: 600; margin-bottom: 6px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+  .legend-swatch { width: 18px; height: 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 2px; flex-shrink: 0; }
+
+  /* Layer selector */
+  .layer-selector {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(26, 31, 41, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px;
+    z-index: 1000;
+    display: flex; gap: 4px;
+  }
+  .layer-btn {
+    background: transparent; border: none; color: var(--text-dim);
+    padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;
+    font-family: inherit; font-weight: 500;
+  }
+  .layer-btn:hover { color: var(--text); }
+  .layer-btn.active { background: var(--accent); color: #052e16; }
+  .layer-btn.off { color: var(--text-dim); }
 
   @media (max-width: 768px) {
     .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     .sidebar { max-height: 50vh; }
+    .legend { font-size: 10px; max-width: 160px; }
+    .layer-selector { font-size: 10px; }
   }
 </style>
 </head>
@@ -173,12 +126,12 @@
 
     <div id="form-coords" class="form-tab">
       <div class="form-group">
-        <span class="label">Latitudine / Longitudine (WGS84)</span>
+        <span class="label">Latitudine / Longitudine</span>
         <div class="row">
           <input type="number" step="any" class="input" id="lat" placeholder="44.4268" />
           <input type="number" step="any" class="input" id="lng" placeholder="26.1025" />
         </div>
-        <small style="color: var(--text-dim); font-size: 11px;">Sau click pe hartă</small>
+        <small style="color: var(--text-dim); font-size: 11px;">WGS84 · sau click pe hartă</small>
       </div>
     </div>
 
@@ -186,7 +139,7 @@
       <div class="form-group">
         <span class="label">Adresă</span>
         <input type="text" class="input" id="address" placeholder="Str. Independenței 1, Iași" />
-        <small style="color: var(--text-dim); font-size: 11px;">Geocodare prin Nominatim (OSM)</small>
+        <small style="color: var(--text-dim); font-size: 11px;">Geocodare prin Photon (OSM)</small>
       </div>
     </div>
 
@@ -202,70 +155,182 @@
         <div class="result-judet" id="r-judet"></div>
       </div>
       <div class="metric">
-        <div>
-          <div class="metric-label">a<sub>g</sub> — accelerația de proiectare</div>
-          <div class="metric-source">P100-1/2013</div>
-        </div>
+        <div><div class="metric-label">a<sub>g</sub> — accelerația de proiectare</div><div class="metric-source">P100-1/2013</div></div>
         <div class="metric-value" id="r-ag">—</div>
       </div>
       <div class="metric">
-        <div>
-          <div class="metric-label">T<sub>C</sub> — perioada de colț</div>
-          <div class="metric-source">P100-1/2013</div>
-        </div>
+        <div><div class="metric-label">T<sub>C</sub> — perioada de colț</div><div class="metric-source">P100-1/2013</div></div>
         <div class="metric-value" id="r-tc">—</div>
       </div>
       <div class="metric">
-        <div>
-          <div class="metric-label">Adâncime maximă de îngheț</div>
-          <div class="metric-source">STAS 6045-77</div>
-        </div>
+        <div><div class="metric-label">Adâncime maximă îngheț</div><div class="metric-source">STAS 6045-77</div></div>
         <div class="metric-value" id="r-inghet">—</div>
       </div>
       <div class="metric">
-        <div>
-          <div class="metric-label">Presiune referință vânt</div>
-          <div class="metric-source">CR 1-1-4/2012</div>
-        </div>
+        <div><div class="metric-label">Presiune referință vânt</div><div class="metric-source">CR 1-1-4/2012</div></div>
         <div class="metric-value" id="r-vant">—</div>
       </div>
       <div class="metric">
-        <div>
-          <div class="metric-label">Încărcare caracteristică din zăpadă</div>
-          <div class="metric-source">CR 1-1-3/2012</div>
-        </div>
+        <div><div class="metric-label">Încărcare caracteristică zăpadă</div><div class="metric-source">CR 1-1-3/2012</div></div>
         <div class="metric-value" id="r-zapada">—</div>
       </div>
     </div>
 
     <div class="footer">
-      Date dominante per județ, derivate din normativele publice MDLPA.
-      Pentru proiectare, verifică oficial în normativele aplicabile.<br>
-      <a href="/docs">Documentație API</a> · <a href="https://github.com/" target="_blank" rel="noopener">Cod sursă</a>
+      Zonarea folosește poligoane explicite calibrate pe orașele majore din normative. Pentru proiectare oficială, verifică direct normativele.<br>
+      <a href="/docs">Documentație API</a> · <a href="https://github.com/lazumario-glitch/situs-ro" target="_blank" rel="noopener">Cod sursă</a>
     </div>
   </aside>
 
   <div class="map">
     <div id="map"></div>
+    <div class="layer-selector">
+      <button class="layer-btn active" data-layer="ag">a<sub>g</sub></button>
+      <button class="layer-btn" data-layer="tc">T<sub>C</sub></button>
+      <button class="layer-btn" data-layer="inghet">îngheț</button>
+      <button class="layer-btn" data-layer="vant">vânt</button>
+      <button class="layer-btn" data-layer="zapada">zăpadă</button>
+      <button class="layer-btn off" data-layer="off">off</button>
+    </div>
+    <div class="legend" id="legend"></div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-const map = L.map('map', {
-  center: [45.9432, 24.9668],
-  zoom: 7,
-  zoomControl: true,
-});
+const map = L.map('map', { center: [45.9432, 24.9668], zoom: 7, zoomControl: true });
 
 L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  subdomains: 'abcd',
-  maxZoom: 19,
+  subdomains: 'abcd', maxZoom: 19,
 }).addTo(map);
 
-let marker = null;
+// ───── Color ramps for each measurement ─────
+const COLOR_RAMPS = {
+  ag: {
+    title: 'a_g (g)',
+    key: 'ag',
+    stops: [
+      { v: 0.08, c: '#fde68a', label: '0.08' },
+      { v: 0.10, c: '#fcd34d', label: '0.10' },
+      { v: 0.15, c: '#fbbf24', label: '0.15' },
+      { v: 0.20, c: '#f59e0b', label: '0.20' },
+      { v: 0.25, c: '#ea580c', label: '0.25' },
+      { v: 0.30, c: '#dc2626', label: '0.30' },
+      { v: 0.35, c: '#991b1b', label: '0.35' },
+      { v: 0.40, c: '#4a044e', label: '0.40' },
+    ]
+  },
+  tc: {
+    title: 'T_C (s)',
+    key: 'Tc',
+    stops: [
+      { v: 0.7, c: '#fde68a', label: '0.7' },
+      { v: 1.0, c: '#fbbf24', label: '1.0' },
+      { v: 1.4, c: '#dc2626', label: '1.4' },
+      { v: 1.6, c: '#4a044e', label: '1.6' },
+    ]
+  },
+  inghet: {
+    title: 'Adâncime îngheț (cm)',
+    key: 'min_cm',
+    stops: [
+      { v: 70,  c: '#fde68a', label: '70–80' },
+      { v: 80,  c: '#fbbf24', label: '80–90' },
+      { v: 90,  c: '#f59e0b', label: '90–100' },
+      { v: 100, c: '#dc2626', label: '100–110' },
+    ]
+  },
+  vant: {
+    title: 'Presiune vânt (kPa)',
+    key: 'value_kPa',
+    stops: [
+      { v: 0.4, c: '#fde68a', label: '0,4' },
+      { v: 0.5, c: '#fbbf24', label: '0,5' },
+      { v: 0.6, c: '#ea580c', label: '0,6' },
+      { v: 0.7, c: '#991b1b', label: '0,7' },
+    ]
+  },
+  zapada: {
+    title: 'Încărcare zăpadă (kPa)',
+    key: 'sk_kPa',
+    stops: [
+      { v: 1.5, c: '#fde68a', label: '1,5' },
+      { v: 2.0, c: '#f59e0b', label: '2,0' },
+      { v: 2.5, c: '#991b1b', label: '2,5' },
+    ]
+  },
+};
 
+function colorFor(layerKey, value) {
+  const stops = COLOR_RAMPS[layerKey].stops;
+  let best = stops[0];
+  for (const s of stops) {
+    if (Math.abs(value - s.v) < Math.abs(value - best.v)) best = s;
+  }
+  return best.c;
+}
+
+let currentLayer = null;
+let currentLayerKey = 'ag';
+const layerCache = {};
+
+async function loadZoneLayer(key) {
+  if (layerCache[key]) return layerCache[key];
+  const resp = await fetch('/v1/zones/' + key);
+  if (!resp.ok) return null;
+  layerCache[key] = await resp.json();
+  return layerCache[key];
+}
+
+async function setLayer(key) {
+  if (currentLayer) { map.removeLayer(currentLayer); currentLayer = null; }
+  document.querySelectorAll('.layer-btn').forEach(b => b.classList.toggle('active', b.dataset.layer === key));
+  if (key === 'off') {
+    document.getElementById('legend').style.display = 'none';
+    return;
+  }
+  document.getElementById('legend').style.display = 'block';
+  const data = await loadZoneLayer(key);
+  if (!data) return;
+  const ramp = COLOR_RAMPS[key];
+  currentLayer = L.geoJSON(data, {
+    style: f => {
+      const v = f.properties[ramp.key];
+      return {
+        fillColor: colorFor(key, v),
+        fillOpacity: 0.4,
+        color: '#fff',
+        weight: 0.5,
+        opacity: 0.4,
+      };
+    },
+    onEachFeature: (f, layer) => {
+      const v = f.properties[ramp.key];
+      const label = f.properties.label || (ramp.title + ': ' + v);
+      layer.bindTooltip(label, { sticky: true });
+    }
+  }).addTo(map);
+  currentLayer.bringToBack();
+  renderLegend(key);
+  currentLayerKey = key;
+}
+
+function renderLegend(key) {
+  const ramp = COLOR_RAMPS[key];
+  const el = document.getElementById('legend');
+  el.innerHTML = '<div class="legend-title">' + ramp.title + '</div>' +
+    ramp.stops.map(s => `<div class="legend-item"><span class="legend-swatch" style="background:${s.c}"></span><span>${s.label}</span></div>`).join('');
+}
+
+document.querySelectorAll('.layer-btn').forEach(btn => {
+  btn.addEventListener('click', () => setLayer(btn.dataset.layer));
+});
+
+// Initial layer
+setLayer('ag');
+
+let marker = null;
 function setMarker(lat, lng) {
   if (marker) map.removeLayer(marker);
   marker = L.marker([lat, lng]).addTo(map);
@@ -279,7 +344,6 @@ map.on('click', (e) => {
   runLookup();
 });
 
-// Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => switchTab(tab.dataset.tab));
 });
@@ -291,22 +355,15 @@ function switchTab(name) {
 }
 
 document.getElementById('lookup-btn').addEventListener('click', runLookup);
-document.getElementById('address').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') runLookup();
-});
+document.getElementById('address').addEventListener('keydown', (e) => { if (e.key === 'Enter') runLookup(); });
 
-function showStatus(message, type) {
+function showStatus(msg, type) {
   const el = document.getElementById('status');
-  el.textContent = message;
-  el.className = 'status ' + type;
-  el.classList.remove('hidden');
+  el.textContent = msg; el.className = 'status ' + type; el.classList.remove('hidden');
   document.getElementById('result-empty').classList.add('hidden');
   document.getElementById('result').classList.add('hidden');
 }
-
-function hideStatus() {
-  document.getElementById('status').classList.add('hidden');
-}
+function hideStatus() { document.getElementById('status').classList.add('hidden'); }
 
 async function runLookup() {
   hideStatus();
@@ -315,18 +372,12 @@ async function runLookup() {
 
   if (activeTab === 'address') {
     const addr = document.getElementById('address').value.trim();
-    if (!addr) {
-      showStatus('Introdu o adresă.', 'error');
-      return;
-    }
+    if (!addr) return showStatus('Introdu o adresă.', 'error');
     url += 'address=' + encodeURIComponent(addr);
   } else {
     const lat = parseFloat(document.getElementById('lat').value);
     const lng = parseFloat(document.getElementById('lng').value);
-    if (isNaN(lat) || isNaN(lng)) {
-      showStatus('Introdu coordonate valide sau click pe hartă.', 'error');
-      return;
-    }
+    if (isNaN(lat) || isNaN(lng)) return showStatus('Introdu coordonate valide.', 'error');
     url += 'lat=' + lat + '&lng=' + lng;
     setMarker(lat, lng);
     map.setView([lat, lng], Math.max(map.getZoom(), 10));
@@ -345,10 +396,6 @@ async function runLookup() {
     const data = await resp.json();
     renderResult(data);
     hideStatus();
-    if (activeTab === 'address' && data.lat && data.lng) {
-      setMarker(data.lat, data.lng);
-      map.setView([data.lat, data.lng], 12);
-    }
   } catch (e) {
     showStatus('Eroare de rețea: ' + e.message, 'error');
   } finally {
@@ -359,11 +406,11 @@ async function runLookup() {
 function renderResult(d) {
   document.getElementById('result-empty').classList.add('hidden');
   document.getElementById('result').classList.remove('hidden');
-
   document.getElementById('r-judet').textContent = d.judet || '—';
   document.getElementById('r-ag').textContent = d.ag.toFixed(2) + ' g';
   document.getElementById('r-tc').textContent = d.Tc.toFixed(1) + ' s';
-  document.getElementById('r-inghet').textContent = d.adancime_inghet.display;
+  document.getElementById('r-inghet').textContent = d.adancime_inghet.min_cm
+    ? `${d.adancime_inghet.min_cm}–${d.adancime_inghet.max_cm} cm` : '—';
   document.getElementById('r-vant').textContent = d.presiune_vant ? d.presiune_vant.display : '—';
   document.getElementById('r-zapada').textContent = (d.incarcare_zapada != null) ? d.incarcare_zapada.toFixed(1) + ' kPa' : '—';
 }

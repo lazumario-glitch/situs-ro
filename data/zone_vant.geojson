@@ -1,0 +1,165 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "value_kPa": 0.7,
+    "qualifier": "=",
+    "label": "qb = 0,7 kPa (litoral)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       27.8,
+       43.6
+      ],
+      [
+       29.8,
+       43.6
+      ],
+      [
+       29.8,
+       45.2
+      ],
+      [
+       29.0,
+       45.3
+      ],
+      [
+       28.3,
+       45.2
+      ],
+      [
+       28.0,
+       45.0
+      ],
+      [
+       27.8,
+       44.2
+      ],
+      [
+       27.8,
+       43.6
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "value_kPa": 0.6,
+    "qualifier": "=",
+    "label": "qb = 0,6 kPa (Moldova)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       26.0,
+       45.2
+      ],
+      [
+       28.3,
+       45.2
+      ],
+      [
+       28.5,
+       48.3
+      ],
+      [
+       25.8,
+       48.3
+      ],
+      [
+       25.8,
+       46.0
+      ],
+      [
+       26.0,
+       45.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "value_kPa": 0.4,
+    "qualifier": "=",
+    "label": "qb = 0,4 kPa (Banat/SV)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       20.2,
+       43.8
+      ],
+      [
+       23.5,
+       43.8
+      ],
+      [
+       23.5,
+       46.5
+      ],
+      [
+       20.2,
+       46.5
+      ],
+      [
+       20.2,
+       43.8
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "value_kPa": 0.5,
+    "qualifier": "=",
+    "label": "qb = 0,5 kPa (rest)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       20.2,
+       43.6
+      ],
+      [
+       30.1,
+       43.6
+      ],
+      [
+       30.1,
+       48.3
+      ],
+      [
+       20.2,
+       48.3
+      ],
+      [
+       20.2,
+       43.6
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "metadata": {
+  "normativ": "CR 1-1-4/2012",
+  "unit": "kPa"
+ }
+}

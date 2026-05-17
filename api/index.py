@@ -16,15 +16,17 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 PUBLIC_DIR = os.path.join(BASE_DIR, "public")
 
 
-def _load_data():
-    with open(os.path.join(DATA_DIR, "judete-ro.geojson"), encoding="utf-8") as f:
-        judete = json.load(f)
-    with open(os.path.join(DATA_DIR, "normative_per_judet.json"), encoding="utf-8") as f:
-        normative = json.load(f)
-    return judete, normative["judete"]
+def _load(name):
+    with open(os.path.join(DATA_DIR, name), encoding="utf-8") as f:
+        return json.load(f)
 
 
-JUDETE_GEOJSON, NORMATIVE = _load_data()
+ZONE_AG = _load("zone_ag.geojson")
+ZONE_TC = _load("zone_tc.geojson")
+ZONE_INGHET = _load("zone_inghet.geojson")
+ZONE_VANT = _load("zone_vant.geojson")
+ZONE_ZAPADA = _load("zone_zapada.geojson")
+JUDETE = _load("judete-ro.geojson")
 
 
 def _point_in_ring(lng: float, lat: float, ring) -> bool:
@@ -42,7 +44,7 @@ def _point_in_ring(lng: float, lat: float, ring) -> bool:
     return inside
 
 
-def _point_in_polygon(lng: float, lat: float, polygon_coords) -> bool:
+def _point_in_polygon_coords(lng: float, lat: float, polygon_coords) -> bool:
     if not polygon_coords:
         return False
     if not _point_in_ring(lng, lat, polygon_coords[0]):
@@ -53,30 +55,25 @@ def _point_in_polygon(lng: float, lat: float, polygon_coords) -> bool:
     return True
 
 
-def _bbox_of_ring(ring):
-    xs = [p[0] for p in ring]
-    ys = [p[1] for p in ring]
-    return min(xs), min(ys), max(xs), max(ys)
+def _point_in_geom(lng: float, lat: float, geom) -> bool:
+    t = geom.get("type")
+    if t == "Polygon":
+        return _point_in_polygon_coords(lng, lat, geom["coordinates"])
+    if t == "MultiPolygon":
+        return any(_point_in_polygon_coords(lng, lat, p) for p in geom["coordinates"])
+    return False
+
+
+def lookup_zone(geojson, lat: float, lng: float):
+    for feature in geojson["features"]:
+        if _point_in_geom(lng, lat, feature["geometry"]):
+            return feature["properties"]
+    return None
 
 
 def find_judet(lat: float, lng: float) -> Optional[str]:
-    for feature in JUDETE_GEOJSON["features"]:
-        geom = feature["geometry"]
-        name = feature["properties"]["NAME_1"]
-        polys = (
-            [geom["coordinates"]]
-            if geom["type"] == "Polygon"
-            else geom["coordinates"]
-        )
-        for poly in polys:
-            if not poly:
-                continue
-            minx, miny, maxx, maxy = _bbox_of_ring(poly[0])
-            if not (minx <= lng <= maxx and miny <= lat <= maxy):
-                continue
-            if _point_in_polygon(lng, lat, poly):
-                return name
-    return None
+    props = lookup_zone(JUDETE, lat, lng)
+    return props["NAME_1"] if props else None
 
 
 def geocode_address(address: str) -> Optional[tuple]:
@@ -110,73 +107,72 @@ def geocode_address(address: str) -> Optional[tuple]:
     return None
 
 
-def _format_inghet(min_cm: Optional[int], max_cm: Optional[int]) -> dict:
-    if min_cm is None or max_cm is None:
+def _format_inghet(props) -> dict:
+    if props is None:
         return {"min_cm": None, "max_cm": None, "display": "#NA"}
     return {
-        "min_cm": min_cm,
-        "max_cm": max_cm,
-        "display": f"{min_cm}–{max_cm} cm",
+        "min_cm": props.get("min_cm"),
+        "max_cm": props.get("max_cm"),
+        "display": props.get("label", f"{props.get('min_cm')}–{props.get('max_cm')} cm"),
     }
 
 
-def _format_vant(value_kPa: Optional[float], qualifier: str) -> Optional[dict]:
-    if value_kPa is None:
+def _format_vant(props) -> Optional[dict]:
+    if props is None:
         return None
-    q_display = qualifier if qualifier in ("=", "≥") else "="
-    val_str = str(value_kPa).replace(".", ",")
+    val = props.get("value_kPa")
+    if val is None:
+        return None
+    qualifier = props.get("qualifier", "=")
+    val_str = str(val).replace(".", ",")
     return {
-        "value_kPa": value_kPa,
-        "qualifier": q_display,
-        "display": f"qb {q_display} {val_str} kPa",
+        "value_kPa": val,
+        "qualifier": qualifier,
+        "display": f"qb {qualifier} {val_str} kPa",
     }
 
 
 class AdancimeInghet(BaseModel):
-    min_cm: Optional[int] = Field(
-        None, description="Adancime minima de inghet in centimetri. `null` pentru zona #NA."
-    )
-    max_cm: Optional[int] = Field(
-        None, description="Adancime maxima de inghet in centimetri. `null` pentru zona #NA."
-    )
-    display: str = Field(..., description="Reprezentare text, ex: `\"80–90 cm\"`.")
+    min_cm: Optional[int] = None
+    max_cm: Optional[int] = None
+    display: str
 
 
 class PresiuneVant(BaseModel):
-    value_kPa: float = Field(..., description="Presiunea de referinta a vantului in kPa.")
-    qualifier: str = Field(..., description="`\"=\"` (valoare exacta) sau `\"≥\"` (valoare minima).")
-    display: str = Field(..., description="Reprezentare text, ex: `\"qb = 0,5 kPa\"`.")
+    value_kPa: float
+    qualifier: str
+    display: str
 
 
 class LookupResponse(BaseModel):
-    ag: float = Field(..., description="Acceleratia de proiectare in fractiuni de g. P100-1/2013.")
-    Tc: float = Field(..., description="Perioada de colt a spectrului de raspuns (s). P100-1/2013.")
-    adancime_inghet: AdancimeInghet = Field(..., description="Adancime maxima de inghet. STAS 6045-77.")
-    presiune_vant: Optional[PresiuneVant] = Field(None, description="Presiune referinta vant. CR 1-1-4/2012.")
-    incarcare_zapada: Optional[float] = Field(None, description="Incarcarea caracteristica din zapada (kPa). CR 1-1-3/2012.")
-    judet: str = Field(..., description="Judetul/UAT-ul in care se afla amplasamentul.")
-    sursa: str = Field(..., description="Standardele sursa ale datelor.")
-    powered_by: str = Field(..., description="Atribuire.")
+    ag: float
+    Tc: float
+    adancime_inghet: AdancimeInghet
+    presiune_vant: Optional[PresiuneVant]
+    incarcare_zapada: Optional[float]
+    judet: Optional[str] = Field(None, description="Judetul (informativ).")
+    sursa: str
+    powered_by: str
 
 
 app = FastAPI(
     title="Situs RO API",
     summary="Incadrarea tehnica a amplasamentelor din Romania.",
     description=(
-        "API REST care determina parametrii normativi de proiectare pentru un punct geografic "
-        "din Romania, pe baza standardelor publice:\n\n"
-        "- **ag** — acceleratia de proiectare ([P100-1/2013](https://www.mdlpa.ro/pages/reglementaritehnice))\n"
+        "API REST care determina parametrii normativi de proiectare pentru un punct "
+        "geografic din Romania, pe baza standardelor publice:\n\n"
+        "- **ag** — acceleratia de proiectare (P100-1/2013)\n"
         "- **Tc** — perioada de colt a spectrului de raspuns (P100-1/2013)\n"
         "- **adancime_inghet** — adancimea maxima de inghet (STAS 6045-77)\n"
         "- **presiune_vant** — presiunea de referinta a vantului (CR 1-1-4/2012)\n"
         "- **incarcare_zapada** — incarcarea caracteristica din zapada in kPa (CR 1-1-3/2012)\n\n"
-        "Punctul poate fi specificat prin coordonate (`lat`/`lng`) sau printr-o adresa in text "
-        "liber (`address`). Geocodificarea adreselor foloseste "
+        "Punctul poate fi specificat prin coordonate (`lat`/`lng`) sau printr-o adresa "
+        "in text liber (`address`). Geocodificarea adreselor foloseste "
         "[Photon](https://photon.komoot.io/) cu bias geografic pe Romania.\n\n"
-        "Datele sunt incadrari dominante per judet, derivate din normativele publice."
+        "Zonarea foloseste poligoane explicite calibrate pe orasele majore din normative."
     ),
-    version="1.0.0",
-    contact={"name": "Situs RO", "url": "https://github.com/"},
+    version="2.0.0",
+    contact={"name": "Situs RO", "url": "https://github.com/lazumario-glitch/situs-ro"},
     license_info={"name": "MIT"},
     docs_url="/docs",
     redoc_url=None,
@@ -204,85 +200,60 @@ async def root():
     "/v1/lookup",
     response_model=LookupResponse,
     summary="Incadrarea tehnica a unui amplasament",
-    description=(
-        "Returneaza incadrarea tehnica (ag, Tc, adancime de inghet, presiune vant, incarcare zapada) "
-        "pentru un punct geografic din Romania.\n\n"
-        "Specifica fie **coordonate** (`lat` + `lng`), fie o **adresa** in text liber (`address`)."
-    ),
-    responses={
-        422: {"description": "Adresa negasita, amplasament in afara acoperirii, sau parametri invalizi."},
-    },
+    responses={422: {"description": "Adresa negasita sau parametri invalizi."}},
 )
 async def lookup(
-    address: Optional[str] = Query(
-        None,
-        description="Adresa in text liber, restrictionata la Romania. Ex: `Str. Independentei 1, Iasi`.",
-        examples=["Str. Independentei 1, Iasi"],
-    ),
-    lat: Optional[float] = Query(
-        None,
-        description="Latitudine WGS84 (EPSG:4326). Obligatorie daca `address` nu e specificat.",
-        examples=[44.4268],
-    ),
-    lng: Optional[float] = Query(
-        None,
-        description="Longitudine WGS84 (EPSG:4326). Obligatorie daca `address` nu e specificat.",
-        examples=[26.1025],
-    ),
+    address: Optional[str] = Query(None, examples=["Str. Independentei 1, Iasi"]),
+    lat: Optional[float] = Query(None, examples=[44.4268]),
+    lng: Optional[float] = Query(None, examples=[26.1025]),
 ):
     if address and (lat is not None or lng is not None):
-        raise HTTPException(
-            status_code=422,
-            detail="Specifica fie `address`, fie `lat`+`lng`, nu ambele.",
-        )
+        raise HTTPException(422, "Specifica fie `address`, fie `lat`+`lng`, nu ambele.")
 
     if address:
         coords = geocode_address(address)
         if coords is None:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Adresa nu a putut fi geocodificata: '{address}'.",
-            )
+            raise HTTPException(422, f"Adresa nu a putut fi geocodificata: '{address}'.")
         lat, lng = coords
     elif lat is None or lng is None:
-        raise HTTPException(
-            status_code=422,
-            detail="Specifica fie `address`, fie ambele `lat`+`lng`.",
-        )
+        raise HTTPException(422, "Specifica fie `address`, fie ambele `lat`+`lng`.")
 
-    judet = find_judet(lat, lng)
-    if judet is None:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Amplasamentul ({lat}, {lng}) este in afara teritoriului Romaniei.",
-        )
+    ag_props = lookup_zone(ZONE_AG, lat, lng)
+    tc_props = lookup_zone(ZONE_TC, lat, lng)
+    inghet_props = lookup_zone(ZONE_INGHET, lat, lng)
+    vant_props = lookup_zone(ZONE_VANT, lat, lng)
+    zapada_props = lookup_zone(ZONE_ZAPADA, lat, lng)
 
-    norm = NORMATIVE.get(judet)
-    if norm is None:
+    if ag_props is None or tc_props is None:
         raise HTTPException(
-            status_code=422,
-            detail=f"Nu exista date normative pentru '{judet}'.",
+            422, f"Amplasamentul ({lat:.4f}, {lng:.4f}) este in afara teritoriului Romaniei."
         )
 
     return LookupResponse(
-        ag=norm["ag"],
-        Tc=norm["Tc"],
-        adancime_inghet=AdancimeInghet(**_format_inghet(norm["inghet_min"], norm["inghet_max"])),
-        presiune_vant=(
-            PresiuneVant(**_format_vant(norm["vant"], norm["vant_qual"]))
-            if norm.get("vant") is not None
-            else None
-        ),
-        incarcare_zapada=norm.get("zapada"),
-        judet=judet,
+        ag=ag_props["ag"],
+        Tc=tc_props["Tc"],
+        adancime_inghet=AdancimeInghet(**_format_inghet(inghet_props)),
+        presiune_vant=PresiuneVant(**_format_vant(vant_props)) if vant_props else None,
+        incarcare_zapada=zapada_props.get("sk_kPa") if zapada_props else None,
+        judet=find_judet(lat, lng),
         sursa="P100-1/2013, STAS 6045-77, CR 1-1-4/2012, CR 1-1-3/2012",
         powered_by="situs-ro",
     )
 
 
-@app.get("/v1/judete", summary="Lista judetelor cu valorile normative", include_in_schema=True)
-async def list_judete():
-    return {"judete": NORMATIVE}
+@app.get("/v1/zones/{measurement}", summary="GeoJSON pentru o zonare", include_in_schema=True)
+async def get_zone_geojson(measurement: str):
+    """Returneaza GeoJSON-ul zonarii pentru overlay vizual pe harta."""
+    mapping = {
+        "ag": ZONE_AG,
+        "tc": ZONE_TC,
+        "inghet": ZONE_INGHET,
+        "vant": ZONE_VANT,
+        "zapada": ZONE_ZAPADA,
+    }
+    if measurement not in mapping:
+        raise HTTPException(404, f"Zonare necunoscuta: {measurement}. Disponibile: {list(mapping.keys())}.")
+    return mapping[measurement]
 
 
 if os.path.isdir(PUBLIC_DIR):
