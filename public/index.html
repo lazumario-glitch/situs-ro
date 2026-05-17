@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Situs RO — Încadrarea tehnică a amplasamentelor din România</title>
+<meta name="description" content="API și interfață pentru determinarea parametrilor normativi de proiectare (ag, Tc, adâncime îngheț, presiune vânt, încărcare zăpadă) pentru orice punct din România." />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a1f29;
+    --panel-2: #232a37;
+    --border: #2d3645;
+    --text: #e8ecef;
+    --text-dim: #9aa5b1;
+    --accent: #4ade80;
+    --accent-dim: #166534;
+    --danger: #f87171;
+    --warning: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    height: 100vh;
+  }
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand-logo {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    color: #052e16;
+  }
+  .brand-name { font-size: 16px; font-weight: 600; }
+  .brand-sub { font-size: 11px; color: var(--text-dim); }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .input, .textarea {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 6px;
+    font: inherit;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  .input:focus, .textarea:focus { outline: none; border-color: var(--accent); }
+  .input::placeholder { color: var(--text-dim); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .tabs { display: flex; background: var(--panel-2); border-radius: 6px; padding: 3px; }
+  .tab { flex: 1; padding: 6px 10px; text-align: center; border-radius: 4px; cursor: pointer; font-size: 12px; color: var(--text-dim); transition: all 0.15s; }
+  .tab.active { background: var(--bg); color: var(--text); }
+
+  .btn {
+    background: var(--accent);
+    color: #052e16;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:hover:not(:disabled) { opacity: 0.9; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .result {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-title { font-weight: 600; }
+  .result-judet { color: var(--accent); font-size: 12px; }
+  .metric { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; }
+  .metric-label { font-size: 12px; color: var(--text-dim); }
+  .metric-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .metric-source { font-size: 10px; color: var(--text-dim); }
+
+  .status { font-size: 12px; padding: 8px 10px; border-radius: 4px; }
+  .status.error { background: rgba(248, 113, 113, 0.12); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.3); }
+  .status.loading { background: rgba(251, 191, 36, 0.12); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.3); }
+  .status.empty { color: var(--text-dim); text-align: center; padding: 24px 12px; font-style: italic; }
+
+  .hidden { display: none !important; }
+
+  .map { position: relative; }
+  #map { width: 100%; height: 100%; background: var(--panel); }
+
+  .footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .footer a { color: var(--text-dim); text-decoration: underline; }
+
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: var(--panel-2);
+    color: var(--text);
+  }
+  .leaflet-control-attribution {
+    background: rgba(15, 20, 25, 0.85) !important;
+    color: var(--text-dim) !important;
+  }
+  .leaflet-control-attribution a { color: var(--text-dim) !important; }
+
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .sidebar { max-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">S</div>
+      <div>
+        <div class="brand-name">Situs RO</div>
+        <div class="brand-sub">Încadrare tehnică amplasamente</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="coords">Coordonate</div>
+      <div class="tab" data-tab="address">Adresă</div>
+    </div>
+
+    <div id="form-coords" class="form-tab">
+      <div class="form-group">
+        <span class="label">Latitudine / Longitudine (WGS84)</span>
+        <div class="row">
+          <input type="number" step="any" class="input" id="lat" placeholder="44.4268" />
+          <input type="number" step="any" class="input" id="lng" placeholder="26.1025" />
+        </div>
+        <small style="color: var(--text-dim); font-size: 11px;">Sau click pe hartă</small>
+      </div>
+    </div>
+
+    <div id="form-address" class="form-tab hidden">
+      <div class="form-group">
+        <span class="label">Adresă</span>
+        <input type="text" class="input" id="address" placeholder="Str. Independenței 1, Iași" />
+        <small style="color: var(--text-dim); font-size: 11px;">Geocodare prin Nominatim (OSM)</small>
+      </div>
+    </div>
+
+    <button class="btn" id="lookup-btn">Caută încadrarea</button>
+
+    <div id="status" class="hidden"></div>
+
+    <div id="result-empty" class="status empty">Selectează un punct pe hartă sau introdu coordonate / adresă.</div>
+
+    <div id="result" class="result hidden">
+      <div class="result-header">
+        <div class="result-title">Rezultat</div>
+        <div class="result-judet" id="r-judet"></div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="metric-label">a<sub>g</sub> — accelerația de proiectare</div>
+          <div class="metric-source">P100-1/2013</div>
+        </div>
+        <div class="metric-value" id="r-ag">—</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="metric-label">T<sub>C</sub> — perioada de colț</div>
+          <div class="metric-source">P100-1/2013</div>
+        </div>
+        <div class="metric-value" id="r-tc">—</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="metric-label">Adâncime maximă de îngheț</div>
+          <div class="metric-source">STAS 6045-77</div>
+        </div>
+        <div class="metric-value" id="r-inghet">—</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="metric-label">Presiune referință vânt</div>
+          <div class="metric-source">CR 1-1-4/2012</div>
+        </div>
+        <div class="metric-value" id="r-vant">—</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="metric-label">Încărcare caracteristică din zăpadă</div>
+          <div class="metric-source">CR 1-1-3/2012</div>
+        </div>
+        <div class="metric-value" id="r-zapada">—</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Date dominante per județ, derivate din normativele publice MDLPA.
+      Pentru proiectare, verifică oficial în normativele aplicabile.<br>
+      <a href="/docs">Documentație API</a> · <a href="https://github.com/" target="_blank" rel="noopener">Cod sursă</a>
+    </div>
+  </aside>
+
+  <div class="map">
+    <div id="map"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const map = L.map('map', {
+  center: [45.9432, 24.9668],
+  zoom: 7,
+  zoomControl: true,
+});
+
+L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19,
+}).addTo(map);
+
+let marker = null;
+
+function setMarker(lat, lng) {
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([lat, lng]).addTo(map);
+  document.getElementById('lat').value = lat.toFixed(6);
+  document.getElementById('lng').value = lng.toFixed(6);
+}
+
+map.on('click', (e) => {
+  setMarker(e.latlng.lat, e.latlng.lng);
+  switchTab('coords');
+  runLookup();
+});
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+});
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('form-coords').classList.toggle('hidden', name !== 'coords');
+  document.getElementById('form-address').classList.toggle('hidden', name !== 'address');
+}
+
+document.getElementById('lookup-btn').addEventListener('click', runLookup);
+document.getElementById('address').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runLookup();
+});
+
+function showStatus(message, type) {
+  const el = document.getElementById('status');
+  el.textContent = message;
+  el.className = 'status ' + type;
+  el.classList.remove('hidden');
+  document.getElementById('result-empty').classList.add('hidden');
+  document.getElementById('result').classList.add('hidden');
+}
+
+function hideStatus() {
+  document.getElementById('status').classList.add('hidden');
+}
+
+async function runLookup() {
+  hideStatus();
+  const activeTab = document.querySelector('.tab.active').dataset.tab;
+  let url = '/v1/lookup?';
+
+  if (activeTab === 'address') {
+    const addr = document.getElementById('address').value.trim();
+    if (!addr) {
+      showStatus('Introdu o adresă.', 'error');
+      return;
+    }
+    url += 'address=' + encodeURIComponent(addr);
+  } else {
+    const lat = parseFloat(document.getElementById('lat').value);
+    const lng = parseFloat(document.getElementById('lng').value);
+    if (isNaN(lat) || isNaN(lng)) {
+      showStatus('Introdu coordonate valide sau click pe hartă.', 'error');
+      return;
+    }
+    url += 'lat=' + lat + '&lng=' + lng;
+    setMarker(lat, lng);
+    map.setView([lat, lng], Math.max(map.getZoom(), 10));
+  }
+
+  showStatus('Se caută încadrarea...', 'loading');
+  document.getElementById('lookup-btn').disabled = true;
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: 'Eroare necunoscută.' }));
+      showStatus(err.detail || ('HTTP ' + resp.status), 'error');
+      return;
+    }
+    const data = await resp.json();
+    renderResult(data);
+    hideStatus();
+    if (activeTab === 'address' && data.lat && data.lng) {
+      setMarker(data.lat, data.lng);
+      map.setView([data.lat, data.lng], 12);
+    }
+  } catch (e) {
+    showStatus('Eroare de rețea: ' + e.message, 'error');
+  } finally {
+    document.getElementById('lookup-btn').disabled = false;
+  }
+}
+
+function renderResult(d) {
+  document.getElementById('result-empty').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+
+  document.getElementById('r-judet').textContent = d.judet || '—';
+  document.getElementById('r-ag').textContent = d.ag.toFixed(2) + ' g';
+  document.getElementById('r-tc').textContent = d.Tc.toFixed(1) + ' s';
+  document.getElementById('r-inghet').textContent = d.adancime_inghet.display;
+  document.getElementById('r-vant').textContent = d.presiune_vant ? d.presiune_vant.display : '—';
+  document.getElementById('r-zapada').textContent = (d.incarcare_zapada != null) ? d.incarcare_zapada.toFixed(1) + ' kPa' : '—';
+}
+</script>
+</body>
+</html>

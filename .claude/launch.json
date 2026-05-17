@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "situs-ro",
+      "runtimeExecutable": "/Users/lazumario/Claude/situs-ro/.venv/bin/uvicorn",
+      "runtimeArgs": ["api.index:app", "--port", "8765", "--host", "127.0.0.1"],
+      "port": 8765
+    }
+  ]
+}
