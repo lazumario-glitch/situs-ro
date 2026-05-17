@@ -30,6 +30,25 @@ ZONE_AG_2025 = _load("zone_ag2025.geojson")
 JUDETE = _load("judete-ro.geojson")
 
 
+# Tabel UAT P100-1/2025 (optional — se genereaza local cu
+# scripts/extract_uat_p100_2025.py; e in .gitignore, nu in repo public)
+UAT_2025_TABLE = None
+_uat_path = os.path.join(DATA_DIR, "uat_p100_2025.json")
+if os.path.exists(_uat_path):
+    try:
+        with open(_uat_path, encoding="utf-8") as f:
+            _rows = json.load(f)
+        # Index pe (judet_norm, uat_norm) pentru lookup rapid
+        def _norm(s):
+            return s.lower().replace("ș", "s").replace("ț", "t").replace("ă", "a") \
+                           .replace("î", "i").replace("â", "a").replace("-", " ").strip()
+        UAT_2025_TABLE = {(_norm(r["judet"]), _norm(r["uat"])): r for r in _rows}
+        print(f"P100-2025 UAT table loaded: {len(UAT_2025_TABLE)} entries")
+    except Exception as e:
+        print(f"Failed to load UAT table: {e}")
+        UAT_2025_TABLE = None
+
+
 def _point_in_ring(lng: float, lat: float, ring) -> bool:
     inside = False
     n = len(ring)
@@ -75,6 +94,67 @@ def lookup_zone(geojson, lat: float, lng: float):
 def find_judet(lat: float, lng: float) -> Optional[str]:
     props = lookup_zone(JUDETE, lat, lng)
     return props["NAME_1"] if props else None
+
+
+def reverse_geocode(lat: float, lng: float) -> Optional[dict]:
+    """Returneaza properties (name, city, county) pentru cel mai apropiat
+    UAT din Photon, sau None la eroare."""
+    params = {"lat": str(lat), "lon": str(lng), "limit": "1"}
+    url = "https://photon.komoot.io/reverse?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "situs-ro/1.0 (+https://github.com/lazumario-glitch/situs-ro)"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+    feats = data.get("features", []) if isinstance(data, dict) else []
+    if not feats:
+        return None
+    return feats[0].get("properties", {})
+
+
+def _norm(s: str) -> str:
+    if not s:
+        return ""
+    return s.lower().replace("ș", "s").replace("ț", "t").replace("ă", "a") \
+                    .replace("î", "i").replace("â", "a").replace("-", " ").strip()
+
+
+def lookup_uat_2025(lat: float, lng: float) -> Optional[dict]:
+    """Lookup direct in tabel UAT P100-2025. Necesita tabelul incarcat
+    (uat_p100_2025.json). Foloseste reverse geocoding pentru a determina
+    UAT-ul; daca nu se gaseste, returneaza None (caller cade la zone)."""
+    if UAT_2025_TABLE is None:
+        return None
+    props = reverse_geocode(lat, lng)
+    if not props:
+        return None
+    if props.get("countrycode") and props["countrycode"] != "RO":
+        return None
+
+    candidates = []
+    # OSM properties pentru UAT: city, town, village, county, name
+    for key in ("city", "town", "village", "name"):
+        v = props.get(key)
+        if v:
+            candidates.append(v)
+    county = props.get("county") or props.get("state") or ""
+
+    # Caut cu județul + numele UAT
+    c_norm = _norm(county)
+    for cand in candidates:
+        u_norm = _norm(cand)
+        if (c_norm, u_norm) in UAT_2025_TABLE:
+            return UAT_2025_TABLE[(c_norm, u_norm)]
+    # Fallback: caut doar dupa nume (oricare judet)
+    for cand in candidates:
+        u_norm = _norm(cand)
+        for (j, u), r in UAT_2025_TABLE.items():
+            if u == u_norm:
+                return r
+    return None
 
 
 def geocode_address(address: str) -> Optional[tuple]:
@@ -232,12 +312,32 @@ async def lookup(
     inghet_props = lookup_zone(ZONE_INGHET, lat, lng)
     vant_props = lookup_zone(ZONE_VANT, lat, lng)
     zapada_props = lookup_zone(ZONE_ZAPADA, lat, lng)
-    p2025_props = lookup_zone(ZONE_AG_2025, lat, lng)
 
     if ag_props is None or tc_props is None:
         raise HTTPException(
             422, f"Amplasamentul ({lat:.4f}, {lng:.4f}) este in afara teritoriului Romaniei."
         )
+
+    # P100-2025: incerc lookup UAT direct (mai precis); altfel cad la zona aproximata
+    p2025_exact = lookup_uat_2025(lat, lng) if UAT_2025_TABLE else None
+    p2025_zone = lookup_zone(ZONE_AG_2025, lat, lng)
+
+    if p2025_exact:
+        p2025 = P2025Spectra(
+            S_SLU_m_s2=p2025_exact["S_SLU"],
+            Tc_SLU_s=p2025_exact["Tc_SLU"],
+            seismicitate=p2025_exact["seismicitate"],
+            label=f"{p2025_exact['judet']} / {p2025_exact['uat']} (exact, Anexa A)",
+        )
+    elif p2025_zone:
+        p2025 = P2025Spectra(
+            S_SLU_m_s2=p2025_zone["S_SLU"],
+            Tc_SLU_s=p2025_zone["Tc_SLU"],
+            seismicitate=p2025_zone["seismicitate"],
+            label=p2025_zone.get("label", "") + " (aproximat)",
+        )
+    else:
+        p2025 = None
 
     return LookupResponse(
         ag=ag_props["ag"],
@@ -245,14 +345,7 @@ async def lookup(
         adancime_inghet=AdancimeInghet(**_format_inghet(inghet_props)),
         presiune_vant=PresiuneVant(**_format_vant(vant_props)) if vant_props else None,
         incarcare_zapada=zapada_props.get("sk_kPa") if zapada_props else None,
-        p100_2025=(
-            P2025Spectra(
-                S_SLU_m_s2=p2025_props["S_SLU"],
-                Tc_SLU_s=p2025_props["Tc_SLU"],
-                seismicitate=p2025_props["seismicitate"],
-                label=p2025_props.get("label", "")
-            ) if p2025_props else None
-        ),
+        p100_2025=p2025,
         judet=find_judet(lat, lng),
         sursa="P100-1/2013, STAS 6045-77, CR 1-1-4/2012, CR 1-1-3/2012",
         powered_by="situs-ro",

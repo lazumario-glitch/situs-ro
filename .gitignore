@@ -13,3 +13,11 @@ node_modules/
 *.log
 .idea/
 .vscode/
+
+# Date extrase din PDF-ul oficial P100-1/2025.
+# Tabelul UAT (compilație substanțială) NU se commitează în repo public —
+# fiecare utilizator îl generează local cu scripts/extract_uat_p100_2025.py
+# pornind de la PDF-ul oficial descărcat de pe https://www.aicps.ro/
+data/uat_p100_2025*.json
+data/private/
+*.pdf

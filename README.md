@@ -47,10 +47,33 @@ Valorile sunt **aproximate din hărțile normativelor publice românești** (MDL
 
 ## Limitări
 
-- **P100-1/2013 vs P100-1/2025**: site-ul folosește valori conforme **P100-1/2013** (la fel ca alte servicii similare). Normativul **P100-1/2025** (cel mai recent) are valori actualizate (în special pentru zona Vrancea: București, Buzău, Ploiești, Bacău au crescut cu ~0.07–0.16g) și format diferit (`S_ap,h` în m/s², cu 2 stări limită SLS/SLU). Pentru aplicații care necesită norma curentă, consultă PDF-ul oficial P100-1/2025.
-- **P100-2013 nu are tabel UAT oficial** — doar hărți. Valorile sunt extrase de specialiști din hărți și pot varia ±0.05g între surse pentru orașele la limita între zone (Brașov, Constanța, Sibiu, Iași, Galați).
+- **P100-1/2013 vs P100-1/2025**: site-ul folosește valori conforme **P100-1/2013** by default (cu toggle pentru P100-1/2025). Normativul **P100-1/2025** are valori actualizate (în special pentru zona Vrancea) și format diferit (`S_ap,h` în m/s², cu 2 stări limită SLS/SLU).
+- **P100-2013 nu are tabel UAT oficial** — doar hărți. Valorile sunt extrase de specialiști din hărți și pot varia ±0.05g între surse pentru orașele la limita între zone.
 - Coordonate prin geocodare Photon (OSM) — acuratețe ~50m pentru orașe, mai variabilă pentru adrese rurale.
-- Zonele sunt mărginite la perimetrul administrativ al României (intersecție cu union al județelor).
+- Zonele sunt mărginite la perimetrul administrativ al României.
+
+## Mod "full P100-2025" (lookup direct per UAT)
+
+Default, varianta **P100-2025** din interfață folosește **zone aproximate** (acuratețe ~67% per tier de seismicitate). Pentru **acuratețe 100% per UAT**, există un mod opțional care folosește tabelul oficial Anexa A din PDF-ul P100-1/2025:
+
+### Activare (local)
+
+1. Descarcă PDF-ul oficial P100-1/2025 de la o sursă unde îl deții legal (ex: [AICPS](https://www.aicps.ro/)) și salvează-l ca `/tmp/p100-2025.pdf`.
+2. Generează tabelul UAT local:
+   ```bash
+   .venv/bin/pip install pypdf
+   .venv/bin/python3 scripts/extract_uat_p100_2025.py
+   ```
+3. Restartează backend. Vei vedea în log: `P100-2025 UAT table loaded: ~2800 entries`.
+4. Pentru orice coordonată, răspunsul include acum câmpul `p100_2025` cu label `(exact, Anexa A)` în loc de `(aproximat)`.
+
+### De ce nu e în repo public?
+
+Tabelul cu ~2800 UAT-uri + valorile lor reprezintă o **compilație substanțială** din actul normativ oficial. Standardul în sine e act normativ (textul nu e protejat de copyright per Legea 8/1996 art. 9), dar compilația poate intra sub regimul de **drept sui generis pe baze de date** (Directiva UE 96/9/EC). Pentru a evita orice ambiguitate, fișierul `data/uat_p100_2025.json` e listat în `.gitignore`. Fiecare utilizator îl regenerează local din propria copie a PDF-ului oficial.
+
+### Comportament pe deploy public
+
+Pe deploy-ul Vercel (situs-ro.vercel.app), tabelul **nu** e prezent → fallback automat la zone aproximate. Toate funcționalitățile rămân operaționale, doar acuratețea P100-2025 e ~67% în loc de 100%.
 
 | Normativ | Sursă oficială |
 |---|---|
