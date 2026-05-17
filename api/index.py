@@ -82,30 +82,32 @@ def find_judet(lat: float, lng: float) -> Optional[str]:
 def geocode_address(address: str) -> Optional[tuple]:
     params = {
         "q": address,
-        "format": "json",
-        "countrycodes": "ro",
-        "limit": "1",
-        "addressdetails": "0",
+        "limit": "5",
+        "bbox": "20.2,43.6,30.1,48.3",
     }
-    url = "https://nominatim.openstreetmap.org/search?" + urllib.parse.urlencode(params)
+    url = "https://photon.komoot.io/api?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(
         url,
-        headers={
-            "User-Agent": "situs-ro/1.0 (https://github.com/) contact@example.com",
-            "Accept-Language": "ro,en;q=0.8",
-        },
+        headers={"User-Agent": "situs-ro/1.0 (+https://github.com/lazumario-glitch/situs-ro)"},
     )
     try:
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception:
         return None
-    if not data:
-        return None
-    try:
-        return float(data[0]["lat"]), float(data[0]["lon"])
-    except (KeyError, ValueError, TypeError):
-        return None
+    features = data.get("features", []) if isinstance(data, dict) else []
+    for feature in features:
+        props = feature.get("properties", {})
+        if props.get("countrycode") and props["countrycode"] != "RO":
+            continue
+        coords = feature.get("geometry", {}).get("coordinates")
+        if not coords or len(coords) < 2:
+            continue
+        try:
+            return float(coords[1]), float(coords[0])
+        except (ValueError, TypeError):
+            continue
+    return None
 
 
 def _format_inghet(min_cm: Optional[int], max_cm: Optional[int]) -> dict:
@@ -170,7 +172,7 @@ app = FastAPI(
         "- **incarcare_zapada** — incarcarea caracteristica din zapada in kPa (CR 1-1-3/2012)\n\n"
         "Punctul poate fi specificat prin coordonate (`lat`/`lng`) sau printr-o adresa in text "
         "liber (`address`). Geocodificarea adreselor foloseste "
-        "[Nominatim](https://nominatim.org/) restrictionat la Romania.\n\n"
+        "[Photon](https://photon.komoot.io/) cu bias geografic pe Romania.\n\n"
         "Datele sunt incadrari dominante per judet, derivate din normativele publice."
     ),
     version="1.0.0",

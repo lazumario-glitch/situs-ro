@@ -56,7 +56,7 @@ Valorile sunt **dominante per județ**, derivate din normativele publice române
 
 - **Backend**: FastAPI (Python 3.11)
 - **Frontend**: HTML + Leaflet (carto basemap)
-- **Geocodare**: Nominatim (OSM)
+- **Geocodare**: Photon (komoot.io, OSM open-source)
 - **Date**: GeoJSON (limite administrative) + JSON lookup per județ
 - **Deploy**: Vercel (serverless functions Python + static)
 
