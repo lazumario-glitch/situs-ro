@@ -13,11 +13,72 @@ prioritate inalta) la CEA MAI GENERALA (default). Lookup returneaza primul match
 import json
 import os
 
+from shapely.geometry import shape, mapping, Polygon, MultiPolygon
+from shapely.ops import unary_union
+from shapely.validation import make_valid
+
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
 
-def feature(coords, props):
-    return {"type": "Feature", "properties": props, "geometry": {"type": "Polygon", "coordinates": [coords]}}
+def _load_ro_polygon():
+    """Construieste polygon-ul Romaniei ca union al tuturor judetelor."""
+    with open(os.path.join(OUT_DIR, "judete-ro.geojson"), encoding="utf-8") as f:
+        judete = json.load(f)
+    geoms = [shape(f["geometry"]) for f in judete["features"]]
+    ro = unary_union(geoms)
+    return make_valid(ro)
+
+
+RO_POLYGON = _load_ro_polygon()
+
+
+def clip_to_ro(coords_list):
+    """Intersecteaza un polygon cu frontiera Romaniei.
+
+    Input: lista de [lng, lat] (un singur ring) sau lista goala.
+    Output: lista de poligoane clipped, fiecare ca [outer_ring].
+    """
+    if not coords_list:
+        return []
+    try:
+        poly = make_valid(Polygon(coords_list))
+        if not poly.is_valid:
+            return []
+        clipped = poly.intersection(RO_POLYGON)
+    except Exception:
+        return []
+    if clipped.is_empty:
+        return []
+
+    results = []
+    if isinstance(clipped, Polygon):
+        results.append([[list(c) for c in clipped.exterior.coords]])
+    elif isinstance(clipped, MultiPolygon):
+        for p in clipped.geoms:
+            results.append([[list(c) for c in p.exterior.coords]])
+    return results
+
+
+def feature(coords, props, clip=True):
+    """Crează Feature GeoJSON. Implicit, intersectează cu frontiera României."""
+    if not coords:
+        return None
+    if not clip:
+        return {"type": "Feature", "properties": props,
+                "geometry": {"type": "Polygon", "coordinates": [coords]}}
+    clipped = clip_to_ro(coords)
+    if not clipped:
+        return None
+    if len(clipped) == 1:
+        return {"type": "Feature", "properties": props,
+                "geometry": {"type": "Polygon", "coordinates": clipped[0]}}
+    return {"type": "Feature", "properties": props,
+            "geometry": {"type": "MultiPolygon", "coordinates": clipped}}
+
+
+def collect(*feats):
+    """Filtrează feature-urile None (clipped la nimic)."""
+    return [f for f in feats if f is not None]
 
 
 def fc(features, meta=None):
@@ -302,9 +363,21 @@ def point_in_ring(lng, lat, ring):
     return inside
 
 
+def point_in_geom(lng, lat, geom):
+    """Suporta Polygon si MultiPolygon."""
+    t = geom["type"]
+    if t == "Polygon":
+        return point_in_ring(lng, lat, geom["coordinates"][0])
+    if t == "MultiPolygon":
+        return any(point_in_ring(lng, lat, poly[0]) for poly in geom["coordinates"])
+    return False
+
+
 def lookup(features, lng, lat, key):
     for f in features:
-        if point_in_ring(lng, lat, f["geometry"]["coordinates"][0]):
+        if f is None:
+            continue
+        if point_in_geom(lng, lat, f["geometry"]):
             return f["properties"][key]
     return None
 
