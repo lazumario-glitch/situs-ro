@@ -43,7 +43,14 @@ curl "https://<domeniu>/v1/lookup?address=Str.%20Independentei%201,%20Iasi"
 
 ## Surse de date
 
-Valorile sunt **dominante per județ**, derivate din normativele publice românești (MDLPA). Pentru proiectare oficială, verifică direct în normativele aplicabile — un județ poate cuprinde mai multe zone (în special pentru ag/Tc în județele cu relief variat).
+Valorile sunt **aproximate din hărțile normativelor publice românești** (MDLPA), folosind poligoane explicite calibrate să dea răspunsurile corecte pe **18 orașe-reper** (Focșani, Buzău, Ploiești, București, Brașov, Cluj-Napoca, Timișoara, Iași, Constanța, Suceava, Oradea, Craiova, Sibiu, Galați, Baia Mare, Tg. Mureș, Pitești, Bacău). Pentru proiectare oficială, verifică direct anexele normativelor sau [harta interactivă MDLPA](https://observator.mdlpa.ro/portal/apps/webappviewer/index.html?id=ceab6fd501124bcaaa701a8e2baf6a36).
+
+## Limitări
+
+- **P100-1/2013 vs P100-1/2025**: site-ul folosește valori conforme **P100-1/2013** (la fel ca alte servicii similare). Normativul **P100-1/2025** (cel mai recent) are valori actualizate (în special pentru zona Vrancea: București, Buzău, Ploiești, Bacău au crescut cu ~0.07–0.16g) și format diferit (`S_ap,h` în m/s², cu 2 stări limită SLS/SLU). Pentru aplicații care necesită norma curentă, consultă PDF-ul oficial P100-1/2025.
+- **P100-2013 nu are tabel UAT oficial** — doar hărți. Valorile sunt extrase de specialiști din hărți și pot varia ±0.05g între surse pentru orașele la limita între zone (Brașov, Constanța, Sibiu, Iași, Galați).
+- Coordonate prin geocodare Photon (OSM) — acuratețe ~50m pentru orașe, mai variabilă pentru adrese rurale.
+- Zonele sunt mărginite la perimetrul administrativ al României (intersecție cu union al județelor).
 
 | Normativ | Sursă oficială |
 |---|---|
