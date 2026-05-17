@@ -100,14 +100,14 @@
   .layer-btn.active { background: var(--accent); color: #052e16; }
   .layer-btn.off { color: var(--text-dim); }
 
-  /* Smooth selector */
+  /* Smooth selector + version selector */
   .smooth-selector {
     position: absolute; top: 64px; right: 16px;
     background: rgba(26, 31, 41, 0.95);
     border: 1px solid var(--border);
     border-radius: 8px; padding: 8px 10px;
     z-index: 1000;
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; gap: 8px;
     font-size: 11px;
   }
   .smooth-selector-label {
@@ -122,6 +122,9 @@
   }
   .smooth-btn:hover { color: var(--text); }
   .smooth-btn.active { background: var(--accent); color: #052e16; border-color: var(--accent); }
+  .selector-row { display: flex; flex-direction: column; gap: 4px; padding-top: 4px;
+                  border-top: 1px solid var(--border); }
+  .selector-row:first-of-type { border-top: none; padding-top: 0; }
 
   @media (max-width: 768px) {
     .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
@@ -220,12 +223,21 @@
       <button class="layer-btn off" data-layer="off">off</button>
     </div>
     <div class="smooth-selector">
-      <div class="smooth-selector-label">Netezire</div>
-      <div class="smooth-buttons">
-        <button class="smooth-btn" data-smooth="0" title="Polygon brut (colțuri vizibile)">0</button>
-        <button class="smooth-btn" data-smooth="1" title="Ușor">1</button>
-        <button class="smooth-btn active" data-smooth="2" title="Mediu (implicit)">2</button>
-        <button class="smooth-btn" data-smooth="3" title="Puternic">3</button>
+      <div class="selector-row">
+        <div class="smooth-selector-label">Normativ</div>
+        <div class="smooth-buttons">
+          <button class="smooth-btn active" data-version="2013" title="P100-1/2013 (standard curent în uz)">2013</button>
+          <button class="smooth-btn" data-version="2025" title="P100-1/2025 (versiunea actualizată, valori aproximate)">2025</button>
+        </div>
+      </div>
+      <div class="selector-row">
+        <div class="smooth-selector-label">Netezire</div>
+        <div class="smooth-buttons">
+          <button class="smooth-btn" data-smooth="0" title="Polygon brut">0</button>
+          <button class="smooth-btn" data-smooth="1" title="Ușor">1</button>
+          <button class="smooth-btn active" data-smooth="2" title="Mediu (implicit)">2</button>
+          <button class="smooth-btn" data-smooth="3" title="Puternic">3</button>
+        </div>
       </div>
     </div>
     <div class="legend" id="legend"></div>
@@ -299,23 +311,42 @@ const COLOR_RAMPS = {
 };
 
 function colorFor(layerKey, value) {
-  const stops = COLOR_RAMPS[layerKey].stops;
-  let best = stops[0];
-  for (const s of stops) {
+  return colorFor2(COLOR_RAMPS[layerKey], value);
+}
+function colorFor2(ramp, value) {
+  let best = ramp.stops[0];
+  for (const s of ramp.stops) {
     if (Math.abs(value - s.v) < Math.abs(value - best.v)) best = s;
   }
   return best.c;
 }
 
+const COLOR_RAMPS_2025 = {
+  ag: {
+    title: 'S_ap,h SLU (m/s²)',
+    key: 'S_SLU',
+    stops: [
+      { v: 3.0,  c: '#fde68a', label: '≈ 3 (Mică)' },
+      { v: 4.5,  c: '#fcd34d', label: '≈ 4.5 (Moderată)' },
+      { v: 6.5,  c: '#f59e0b', label: '≈ 6.5 (Moderată)' },
+      { v: 8.5,  c: '#ea580c', label: '≈ 8.5 (Mare)' },
+      { v: 10.0, c: '#dc2626', label: '≈ 10 (Mare)' },
+      { v: 11.0, c: '#991b1b', label: '≈ 11 (Mare)' },
+      { v: 12.5, c: '#4a044e', label: '≈ 12.5 (Mare)' },
+    ]
+  },
+};
+
 let currentLayer = null;
 let currentLayerKey = 'ag';
 let currentSmooth = 2;
+let currentVersion = '2013';
 const layerCache = {};
 
-async function loadZoneLayer(key, smooth) {
-  const cacheKey = key + ':' + smooth;
+async function loadZoneLayer(key, smooth, version) {
+  const cacheKey = key + ':' + smooth + ':' + version;
   if (layerCache[cacheKey]) return layerCache[cacheKey];
-  const resp = await fetch('/v1/zones/' + key + '?smooth=' + smooth);
+  const resp = await fetch('/v1/zones/' + key + '?smooth=' + smooth + '&version=' + version);
   if (!resp.ok) return null;
   layerCache[cacheKey] = await resp.json();
   return layerCache[cacheKey];
@@ -332,14 +363,17 @@ async function setLayer(key) {
   }
   document.getElementById('legend').style.display = 'block';
   if (smoothSel) smoothSel.style.display = 'flex';
-  const data = await loadZoneLayer(key, currentSmooth);
+  const data = await loadZoneLayer(key, currentSmooth, currentVersion);
   if (!data) return;
-  const ramp = COLOR_RAMPS[key];
+  // Pentru P100-2025 (doar ag), folosesc S_SLU ca cheie + ramp special
+  const isP2025 = currentVersion === '2025' && (key === 'ag' || key === 'tc');
+  const ramp = isP2025 ? COLOR_RAMPS_2025[key] : COLOR_RAMPS[key];
+  if (!ramp) { document.getElementById('legend').style.display = 'none'; return; }
   currentLayer = L.geoJSON(data, {
     style: f => {
       const v = f.properties[ramp.key];
       return {
-        fillColor: colorFor(key, v),
+        fillColor: colorFor2(ramp, v),
         fillOpacity: 0.4,
         color: '#fff',
         weight: 0.5,
@@ -366,12 +400,30 @@ function setSmooth(level) {
   }
 }
 
-document.querySelectorAll('.smooth-btn').forEach(btn => {
+document.querySelectorAll('.smooth-btn[data-smooth]').forEach(btn => {
   btn.addEventListener('click', () => setSmooth(parseInt(btn.dataset.smooth)));
 });
+document.querySelectorAll('.smooth-btn[data-version]').forEach(btn => {
+  btn.addEventListener('click', () => setVersion(btn.dataset.version));
+});
+
+function setVersion(v) {
+  currentVersion = v;
+  document.querySelectorAll('.smooth-btn[data-version]').forEach(b =>
+    b.classList.toggle('active', b.dataset.version === v));
+  if (currentLayerKey !== 'off') {
+    setLayer(currentLayerKey);
+  }
+  // Updatez și panoul de rezultat dacă există date
+  if (window.lastLookupData) {
+    renderResult(window.lastLookupData);
+  }
+}
 
 function renderLegend(key) {
-  const ramp = COLOR_RAMPS[key];
+  const isP2025 = currentVersion === '2025' && (key === 'ag' || key === 'tc');
+  const ramp = isP2025 ? COLOR_RAMPS_2025[key] : COLOR_RAMPS[key];
+  if (!ramp) return;
   const el = document.getElementById('legend');
   el.innerHTML = '<div class="legend-title">' + ramp.title + '</div>' +
     ramp.stops.map(s => `<div class="legend-item"><span class="legend-swatch" style="background:${s.c}"></span><span>${s.label}</span></div>`).join('');
@@ -459,11 +511,17 @@ async function runLookup(opts = {}) {
 }
 
 function renderResult(d) {
+  window.lastLookupData = d;
   document.getElementById('result-empty').classList.add('hidden');
   document.getElementById('result').classList.remove('hidden');
   document.getElementById('r-judet').textContent = d.judet || '—';
-  document.getElementById('r-ag').textContent = d.ag.toFixed(2) + ' g';
-  document.getElementById('r-tc').textContent = d.Tc.toFixed(1) + ' s';
+  if (currentVersion === '2025' && d.p100_2025) {
+    document.getElementById('r-ag').textContent = d.p100_2025.S_SLU_m_s2.toFixed(2) + ' m/s²';
+    document.getElementById('r-tc').textContent = d.p100_2025.Tc_SLU_s.toFixed(1) + ' s (SLU)';
+  } else {
+    document.getElementById('r-ag').textContent = d.ag.toFixed(2) + ' g';
+    document.getElementById('r-tc').textContent = d.Tc.toFixed(1) + ' s';
+  }
   document.getElementById('r-inghet').textContent = d.adancime_inghet.min_cm
     ? `${d.adancime_inghet.min_cm}–${d.adancime_inghet.max_cm} cm` : '—';
   document.getElementById('r-vant').textContent = d.presiune_vant ? d.presiune_vant.display : '—';

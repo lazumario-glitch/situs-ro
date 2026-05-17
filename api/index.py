@@ -26,6 +26,7 @@ ZONE_TC = _load("zone_tc.geojson")
 ZONE_INGHET = _load("zone_inghet.geojson")
 ZONE_VANT = _load("zone_vant.geojson")
 ZONE_ZAPADA = _load("zone_zapada.geojson")
+ZONE_AG_2025 = _load("zone_ag2025.geojson")
 JUDETE = _load("judete-ro.geojson")
 
 
@@ -144,12 +145,20 @@ class PresiuneVant(BaseModel):
     display: str
 
 
+class P2025Spectra(BaseModel):
+    S_SLU_m_s2: float = Field(..., description="Acceleratie de proiectare orizontala SLU (m/s²)")
+    Tc_SLU_s: float = Field(..., description="Perioada de colt SLU (s)")
+    seismicitate: str = Field(..., description="Categoria seismicitate: Mică / Moderată / Mare")
+    label: str = Field(..., description="Reprezentare text scurta")
+
+
 class LookupResponse(BaseModel):
     ag: float
     Tc: float
     adancime_inghet: AdancimeInghet
     presiune_vant: Optional[PresiuneVant]
     incarcare_zapada: Optional[float]
+    p100_2025: Optional[P2025Spectra] = Field(None, description="Valori P100-1/2025 aproximate (S_ap,h SLU + Tc SLU)")
     judet: Optional[str] = Field(None, description="Judetul (informativ).")
     sursa: str
     powered_by: str
@@ -223,6 +232,7 @@ async def lookup(
     inghet_props = lookup_zone(ZONE_INGHET, lat, lng)
     vant_props = lookup_zone(ZONE_VANT, lat, lng)
     zapada_props = lookup_zone(ZONE_ZAPADA, lat, lng)
+    p2025_props = lookup_zone(ZONE_AG_2025, lat, lng)
 
     if ag_props is None or tc_props is None:
         raise HTTPException(
@@ -235,6 +245,14 @@ async def lookup(
         adancime_inghet=AdancimeInghet(**_format_inghet(inghet_props)),
         presiune_vant=PresiuneVant(**_format_vant(vant_props)) if vant_props else None,
         incarcare_zapada=zapada_props.get("sk_kPa") if zapada_props else None,
+        p100_2025=(
+            P2025Spectra(
+                S_SLU_m_s2=p2025_props["S_SLU"],
+                Tc_SLU_s=p2025_props["Tc_SLU"],
+                seismicitate=p2025_props["seismicitate"],
+                label=p2025_props.get("label", "")
+            ) if p2025_props else None
+        ),
         judet=find_judet(lat, lng),
         sursa="P100-1/2013, STAS 6045-77, CR 1-1-4/2012, CR 1-1-3/2012",
         powered_by="situs-ro",
@@ -242,19 +260,28 @@ async def lookup(
 
 
 @app.get("/v1/zones/{measurement}", summary="GeoJSON pentru o zonare", include_in_schema=True)
-async def get_zone_geojson(measurement: str, smooth: int = Query(2, ge=0, le=3,
-                                                                  description="Nivel smoothing 0-3")):
+async def get_zone_geojson(
+    measurement: str,
+    smooth: int = Query(2, ge=0, le=3, description="Nivel smoothing 0-3"),
+    version: str = Query("2013", description="Versiune P100: 2013 sau 2025"),
+):
     """Returneaza GeoJSON-ul zonarii pentru overlay vizual pe harta.
 
-    `smooth` controleaza Chaikin corner-cutting: 0 = polygon brut (colturi vizibile),
-    3 = curbe foarte netede. Implicit 2.
+    `smooth` controleaza Chaikin corner-cutting (0-3).
+    `version` selecteaza P100-1/2013 sau P100-1/2025 (doar pentru ag/tc).
     """
     if measurement not in {"ag", "tc", "inghet", "vant", "zapada"}:
         raise HTTPException(404, f"Zonare necunoscuta: {measurement}.")
-    fname = f"zone_{measurement}_s{smooth}.geojson"
+
+    # P100-2025 doar pentru ag/tc; restul (inghet, vant, zapada) sunt din alte normative
+    if version == "2025" and measurement in {"ag", "tc"}:
+        fname = f"zone_{measurement}2025_s{smooth}.geojson"
+    else:
+        fname = f"zone_{measurement}_s{smooth}.geojson"
+
     path = os.path.join(DATA_DIR, fname)
     if not os.path.exists(path):
-        raise HTTPException(404, f"Nivel smooth indisponibil: {smooth}.")
+        raise HTTPException(404, f"Variant indisponibil: {fname}.")
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
